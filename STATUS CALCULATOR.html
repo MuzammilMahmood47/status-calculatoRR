@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Element Personality Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
+        .urdu { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2; }
+        /* Robust selection style */
+        .selected-card { 
+            border-color: #2563eb !important; 
+            background-color: #eff6ff !important; 
+            box-shadow: 0 0 0 2px #93c5fd;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 font-sans">
+    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="bg-slate-900 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold">Discover Your Element</h1>
+            <p class="text-slate-400 text-sm mt-1">Identify your nature and billionaire potential</p>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quiz-container" class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-slate-700">
+                    Select your traits: 
+                    <span id="counter" class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">0 Selected</span>
+                </h2>
+                <span class="urdu text-sm text-slate-500">اپنی خوبیاں چنیں</span>
+            </div>
+            
+            <div id="trait-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Traits injected here -->
+            </div>
+            
+            <button onclick="calculateResult()" class="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95">
+                Calculate Result / نتیجہ دیکھیں
+            </button>
+        </div>
+
+        <!-- Result Container -->
+        <div id="result-container" class="hidden p-6 text-center">
+            <div id="element-icon" class="text-7xl mb-4"></div>
+            <h2 id="result-title" class="text-3xl font-bold mb-2 text-slate-900"></h2>
+            
+            <div class="bg-blue-50 rounded-xl p-5 mb-6 text-left border border-blue-100">
+                <p class="text-blue-800 font-bold text-lg">💰 Billionaire Tendency: <span id="bt-score"></span></p>
+                <div class="mt-4 space-y-3">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Qualities / خوبیاں</p>
+                        <p id="qualities-text" class="text-sm text-slate-700 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-red-500 uppercase tracking-wider">Challenges / مشکلات</p>
+                        <p id="challenges-text" class="text-sm text-slate-700 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Examples / مثالیں</p>
+                        <p id="examples-text" class="text-sm text-slate-600 italic"></p>
+                    </div>
+                </div>
+            </div>
+            <button onclick="resetQuiz()" class="text-blue-600 font-medium hover:underline">← Start Over / دوبارہ شروع کریں</button>
+        </div>
+    </div>
+
+    <script>
+        const elementData = {
+            fire: { name: "Fire (Aatish / Agni)", icon: "🔥", bt: "~35%", qualities: "Intense energy, leadership, highly driven (بھرپور توانائی، قیادت، صاحبِ بصیرت)", challenges: "Stubborn, short temper, hate compromise (ضدی، غصہ، جلد باز)", examples: "Imran Khan, Mukesh Ambani, Donald Trump",
+                traits: [{en: "Strong Leadership", ur: "مضبوط قیادت"}, {en: "Highly Driven", ur: "انتہائی پرجوش"}, {en: "Risk Taker", ur: "خطرہ مول لینے والا"}, {en: "Short Temper", ur: "تیز مزاج / غصہ"}, {en: "Stubborn", ur: "ضدی"}]
+            },
+            air: { name: "Air (Hawa)", icon: "💨", bt: "~18–20%", qualities: "Joyful, social, adaptable (خوش مزاج، ملنسار، لچکدار)", challenges: "Inconsistent, get bored fast (غیر مستقل مزاجی، اکتا جانا)", examples: "Barack Obama, Elon Musk, Bilawal Bhutto",
+                traits: [{en: "Social/Talkative", ur: "ملنسار اور باتونی"}, {en: "Adaptable", ur: "حالات کے مطابق ڈھلنا"}, {en: "Creative", ur: "تخلیقی ذہن"}, {en: "Independent", ur: "آزاد خیال"}, {en: "Hate Routine", ur: "معمول سے بیزاری"}]
+            },
+            water: { name: "Water (Pani)", icon: "💧", bt: "< 6%", qualities: "Calm, flexible, friendly (پراسکون، لچکدار، ہمدرد)", challenges: "Can’t say no, easily exploited (نا کہنا مشکل، جذباتی استحصال)", examples: "Abdul Sattar Edhi, Mother Teresa",
+                traits: [{en: "Calm/Peaceful", ur: "پرسکون طبیعت"}, {en: "Empathetic", ur: "دوسروں کا درد محسوس کرنا"}, {en: "Friendly", ur: "دوستانہ رویہ"}, {en: "Can't Say No", ur: "انکار نہ کر پانا"}, {en: "Emotional", ur: "جذباتی"}]
+            },
+            earth: { name: "Earth (Mitti)", icon: "🌍", bt: "~10–12%", qualities: "Stable, serious, deep thinkers (مستحکم، سنجیدہ، گہری سوچ)", challenges: "Overthinking, slow decisions (زیادہ سوچنا، سست فیصلے)", examples: "Allama Iqbal, Bill Gates, Mark Zuckerberg",
+                traits: [{en: "Deep Thinker", ur: "گہری سوچ والا"}, {en: "Persistent", ur: "ثابت قدم"}, {en: "Reliable", ur: "قابل بھروسہ"}, {en: "Overthinking", ur: "حد سے زیادہ سوچنا"}, {en: "Punctual", ur: "وقت کا پابند"}]
+            }
+        };
+
+        let selectedTraits = new Set();
+
+        function updateCounter() {
+            document.getElementById('counter').innerText = `${selectedTraits.size} Selected`;
+        }
+
+        function init() {
+            const list = document.getElementById('trait-list');
+            list.innerHTML = '';
+            Object.keys(elementData).forEach(key => {
+                elementData[key].traits.forEach(trait => {
+                    const btn = document.createElement('div');
+                    btn.className = 'element-card border-2 border-slate-200 p-3 rounded-xl cursor-pointer hover:border-blue-400 flex justify-between items-center bg-white shadow-sm';
+                    btn.innerHTML = `<span class="text-sm font-bold text-slate-700">${trait.en}</span><span class="urdu text-xs text-blue-600 font-bold">${trait.ur}</span>`;
+                    
+                    btn.onclick = () => {
+                        if (selectedTraits.has(trait.en)) {
+                            selectedTraits.delete(trait.en);
+                            btn.classList.remove('selected-card');
+                        } else {
+                            selectedTraits.add(trait.en);
+                            btn.classList.add('selected-card');
+                        }
+                        updateCounter();
+                    };
+                    list.appendChild(btn);
+                });
+            });
+            updateCounter();
+        }
+
+        function calculateResult() {
+            if (selectedTraits.size === 0) return alert("Please select your traits first!");
+            let scores = { fire: 0, air: 0, water: 0, earth: 0 };
+            selectedTraits.forEach(t => {
+                for (let k in elementData) if (elementData[k].traits.some(x => x.en === t)) scores[k]++;
+            });
+            const winnerKey = Object.keys(scores).reduce((a, b) => scores[a] >= scores[b] ? a : b);
+            const w = elementData[winnerKey];
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('result-container').classList.remove('hidden');
+            document.getElementById('element-icon').innerText = w.icon;
+            document.getElementById('result-title').innerText = w.name;
+            document.getElementById('bt-score').innerText = w.bt;
+            document.getElementById('qualities-text').innerText = w.qualities;
+            document.getElementById('challenges-text').innerText = w.challenges;
+            document.getElementById('examples-text').innerText = w.examples;
+        }
+
+        function resetQuiz() {
+            selectedTraits.clear();
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('result-container').classList.add('hidden');
+            init();
+        }
+
+        init();
+    </script>
+</body>
+</html>
